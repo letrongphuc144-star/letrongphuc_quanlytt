@@ -1,0 +1,2218 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Users, 
+  BookOpen, 
+  GraduationCap, 
+  ClipboardList, 
+  CreditCard, 
+  LayoutDashboard, 
+  LogOut, 
+  LogIn,
+  Plus, 
+  Search, 
+  Edit2, 
+  Trash2, 
+  Eye, 
+  X, 
+  CheckCircle, 
+  AlertCircle, 
+  TrendingUp, 
+  DollarSign, 
+  Calendar, 
+  Clock, 
+  UserCheck, 
+  ChevronLeft, 
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  RefreshCw,
+  ShieldAlert,
+  Building2,
+  Menu,
+  Download,
+  FileSpreadsheet,
+  Upload,
+  Settings,
+  Bell,
+  Mail,
+  Phone,
+  MapPin,
+  Check,
+  Percent,
+  TrendingDown,
+  PieChart as PieChartIcon,
+  Shield,
+  CheckSquare
+} from 'lucide-react';
+
+// Dynamic Storage Helpers to maintain state between reloads
+const getInitialData = (key, fallback) => {
+  try {
+    const saved = localStorage.getItem(`quanlytt_${key}`);
+    return saved ? JSON.parse(saved) : fallback;
+  } catch (e) {
+    return fallback;
+  }
+};
+
+const setStorageData = (key, data) => {
+  try {
+    localStorage.setItem(`quanlytt_${key}`, JSON.stringify(data));
+  } catch (e) {
+    console.error("Storage Error", e);
+  }
+};
+
+// --- INITIAL EXPANDED SEED DATA ---
+const INITIAL_KHOA_HOC = [
+  { id: '1', ma_khoa_hoc: 'KH001', ten_khoa_hoc: 'Lập trình React Native Pro', mo_ta: 'Khóa học lập trình di động đa nền tảng nâng cao.', hoc_phi: 4500000, thoi_luong: '36 buổi', trang_thai: 'DangMo' },
+  { id: '2', ma_khoa_hoc: 'KH002', ten_khoa_hoc: 'Fullstack Web Node.js & React', mo_ta: 'Học phát triển web toàn diện từ Backend đến Frontend.', hoc_phi: 6800000, thoi_luong: '48 buổi', trang_thai: 'DangMo' },
+  { id: '3', ma_khoa_hoc: 'KH003', ten_khoa_hoc: 'Tiếng Anh Giao Tiếp Doanh Nghiệp', mo_ta: 'Cơ bản đến nâng cao cho người đi làm.', hoc_phi: 3200000, thoi_luong: '24 buổi', trang_thai: 'DangMo' },
+  { id: '4', ma_khoa_hoc: 'KH004', ten_khoa_hoc: 'Thiết kế Đồ họa UI/UX Pro', mo_ta: 'Thiết kế giao diện người dùng hiện đại với Figma.', hoc_phi: 3900000, thoi_luong: '20 buổi', trang_thai: 'TamDung' },
+  { id: '5', ma_khoa_hoc: 'KH005', ten_khoa_hoc: 'Data Science & AI căn bản', mo_ta: 'Phân tích dữ liệu & Machine Learning cơ bản.', hoc_phi: 7500000, thoi_luong: '40 buổi', trang_thai: 'DangMo' },
+];
+
+const INITIAL_HOC_VIEN = [
+  { id: '1', ma_hoc_vien: 'HV001', ho_ten: 'Nguyễn Văn An', ngay_sinh: '2001-05-15', gioi_tinh: 'Nam', dien_thoai: '0912345678', email: 'an.nguyen@gmail.com', dia_chi: 'Q1, TP. Hồ Chí Minh' },
+  { id: '2', ma_hoc_vien: 'HV002', ho_ten: 'Trần Thị Bình', ngay_sinh: '2002-08-20', gioi_tinh: 'Nữ', dien_thoai: '0987654321', email: 'binh.tran@gmail.com', dia_chi: 'Q3, TP. Hồ Chí Minh' },
+  { id: '3', ma_hoc_vien: 'HV003', ho_ten: 'Lê Hoàng Cường', ngay_sinh: '1999-12-10', gioi_tinh: 'Nam', dien_thoai: '0905112233', email: 'cuong.le@gmail.com', dia_chi: 'Bình Thạnh, TP. HCM' },
+  { id: '4', ma_hoc_vien: 'HV004', ho_ten: 'Phạm Minh Dung', ngay_sinh: '2003-03-25', gioi_tinh: 'Nữ', dien_thoai: '0933445566', email: 'dung.pham@gmail.com', dia_chi: 'Tân Bình, TP. HCM' },
+  { id: '5', ma_hoc_vien: 'HV005', ho_ten: 'Vũ Đức Én', ngay_sinh: '2000-09-02', gioi_tinh: 'Nam', dien_thoai: '0977889900', email: 'en.vu@gmail.com', dia_chi: 'Thủ Đức, TP. HCM' },
+  { id: '6', ma_hoc_vien: 'HV006', ho_ten: 'Đặng Quốc Huy', ngay_sinh: '1998-11-04', gioi_tinh: 'Nam', dien_thoai: '0944112233', email: 'huy.dang@gmail.com', dia_chi: 'Phú Nhuận, TP. HCM' },
+];
+
+const INITIAL_LOP_HOC = [
+  { id: '1', ma_lop: 'REACT-K24', ten_lop: 'React Native K24 (Tối 2-4-6)', khoa_hoc_id: '1', giao_vien: 'ThS. Nguyễn Đức Anh', ngay_bat_dau: '2025-04-01', ngay_ket_thuc: '2025-07-01', lich_hoc: '18:30 - 21:00 (Thứ 2, 4, 6)', si_so_toi_da: 25, trang_thai: 'DangMo' },
+  { id: '2', ma_lop: 'NODE-K18', ten_lop: 'Node.js Fullstack K18', khoa_hoc_id: '2', giao_vien: 'KS. Hoàng Văn Nam', ngay_bat_dau: '2025-04-10', ngay_ket_thuc: '2025-08-30', lich_hoc: '19:00 - 21:30 (Thứ 3, 5, 7)', si_so_toi_da: 20, trang_thai: 'DangMo' },
+  { id: '3', ma_lop: 'ENG-BIZ-01', ten_lop: 'Business English Level 1', khoa_hoc_id: '3', giao_vien: 'Ms. Sarah Jenkins', ngay_bat_dau: '2025-03-15', ngay_ket_thuc: '2025-05-15', lich_hoc: '18:00 - 20:00 (Thứ 2, 4)', si_so_toi_da: 15, trang_thai: 'DangHoc' },
+  { id: '4', ma_lop: 'DATA-K01', ten_lop: 'Data Science & AI K01', khoa_hoc_id: '5', giao_vien: 'TS. Phạm Minh Tuấn', ngay_bat_dau: '2025-05-01', ngay_ket_thuc: '2025-09-01', lich_hoc: '09:00 - 12:00 (Chủ Nhật)', si_so_toi_da: 30, trang_thai: 'DangMo' },
+];
+
+const INITIAL_GHI_DANH = [
+  { id: '1', hoc_vien_id: '1', lop_hoc_id: '1', ngay_ghi_danh: '2025-03-01', trang_thai: 'DaXacNhan', ghi_chu: 'Đã đóng cọc 50%' },
+  { id: '2', hoc_vien_id: '2', lop_hoc_id: '1', ngay_ghi_danh: '2025-03-02', trang_thai: 'HoanThanh', ghi_chu: 'Đã hoàn tất học phí' },
+  { id: '3', hoc_vien_id: '3', lop_hoc_id: '2', ngay_ghi_danh: '2025-03-05', trang_thai: 'ChuaXacNhan', ghi_chu: 'Hẹn thanh toán tuần sau' },
+  { id: '4', hoc_vien_id: '4', lop_hoc_id: '3', ngay_ghi_danh: '2025-03-10', trang_thai: 'HoanThanh', ghi_chu: 'Học viên học bổng 20%' },
+  { id: '5', hoc_vien_id: '5', lop_hoc_id: '4', ngay_ghi_danh: '2025-03-12', trang_thai: 'DaXacNhan', ghi_chu: 'Đăng ký sớm' },
+];
+
+const INITIAL_HOC_PHI = [
+  { id: '1', ghi_danh_id: '1', so_tien: 2250000, ngay_dong: '2025-03-01', trang_thai: 'DaThanhToan', phuong_thuc: 'ChuyenKhoan', ghi_chu: 'Chuyển khoản Vietcombank' },
+  { id: '2', ghi_danh_id: '2', so_tien: 4500000, ngay_dong: '2025-03-02', trang_thai: 'DaThanhToan', phuong_thuc: 'TienMat', ghi_chu: 'Nộp tiền tại trung tâm' },
+  { id: '3', ghi_danh_id: '3', so_tien: 6800000, ngay_dong: null, trang_thai: 'ChuaThanhToan', phuong_thuc: 'ChuyenKhoan', ghi_chu: 'Chưa thanh toán' },
+  { id: '4', ghi_danh_id: '4', so_tien: 2560000, ngay_dong: '2025-03-10', trang_thai: 'DaThanhToan', phuong_thuc: 'ChuyenKhoan', ghi_chu: 'Thanh toán trực tuyến' },
+  { id: '5', ghi_danh_id: '5', so_tien: 7500000, ngay_dong: null, trang_thai: 'ChuaThanhToan', phuong_thuc: 'Momo', ghi_chu: 'Hẹn thanh toán trước khai giảng' },
+];
+
+const INITIAL_DIEM_DANH = [
+  { id: '1', lop_hoc_id: '1', hoc_vien_id: '1', ngay: '2025-04-03', trang_thai: 'CoMat', ghi_chu: 'Đúng giờ' },
+  { id: '2', lop_hoc_id: '1', hoc_vien_id: '2', ngay: '2025-04-03', trang_thai: 'CoMat', ghi_chu: 'Đúng giờ' },
+  { id: '3', lop_hoc_id: '2', hoc_vien_id: '3', ngay: '2025-04-04', trang_thai: 'VangPhep', ghi_chu: 'Xin nghỉ có phép' }
+];
+
+const formatVND = (amount) => {
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount || 0);
+};
+
+export default function App() {
+  const [currentUser, setCurrentUser] = useState(() => getInitialData('user', null));
+  const [isAuthenticated, setIsAuthenticated] = useState(() => getInitialData('auth', false));
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [quanTriOpen, setQuanTriOpen] = useState(true);
+
+  // Application Persistent Data States
+  const [khoaHocList, setKhoaHocList] = useState(() => getInitialData('khoa_hoc', INITIAL_KHOA_HOC));
+  const [hocVienList, setHocVienList] = useState(() => getInitialData('hoc_vien', INITIAL_HOC_VIEN));
+  const [lopHocList, setLopHocList] = useState(() => getInitialData('lop_hoc', INITIAL_LOP_HOC));
+  const [ghiDanhList, setGhiDanhList] = useState(() => getInitialData('ghi_danh', INITIAL_GHI_DANH));
+  const [hocPhiList, setHocPhiList] = useState(() => getInitialData('hoc_phi', INITIAL_HOC_PHI));
+  const [diemDanhList, setDiemDanhList] = useState(() => getInitialData('diem_danh', INITIAL_DIEM_DANH));
+  const [userAccounts, setUserAccounts] = useState(() => getInitialData('users_db', [
+    { email: 'admin@quanlytt.edu.vn', password: '@Abc123', ho_ten: 'Lê Quản Trị', vai_tro: 'quan_tri_vien' },
+    { email: 'daotao@quanlytt.edu.vn', password: '123', ho_ten: 'Nguyễn Đào Tạo', vai_tro: 'dao_tao' },
+    { email: 'ketoan@quanlytt.edu.vn', password: '123', ho_ten: 'Trần Kế Toán', vai_tro: 'ke_toan' },
+    { email: 'giaovien@quanlytt.edu.vn', password: '123', ho_ten: 'ThS. Nguyễn Đức Anh', vai_tro: 'giao_vien' }
+  ]));
+
+  // Sync to local storage on updates
+  useEffect(() => setStorageData('khoa_hoc', khoaHocList), [khoaHocList]);
+  useEffect(() => setStorageData('hoc_vien', hocVienList), [hocVienList]);
+  useEffect(() => setStorageData('lop_hoc', lopHocList), [lopHocList]);
+  useEffect(() => setStorageData('ghi_danh', ghiDanhList), [ghiDanhList]);
+  useEffect(() => setStorageData('hoc_phi', hocPhiList), [hocPhiList]);
+  useEffect(() => setStorageData('diem_danh', diemDanhList), [diemDanhList]);
+  useEffect(() => setStorageData('users_db', userAccounts), [userAccounts]);
+  useEffect(() => setStorageData('auth', isAuthenticated), [isAuthenticated]);
+  useEffect(() => setStorageData('user', currentUser), [currentUser]);
+
+  // Toast State
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleLogin = (email, password) => {
+    const found = userAccounts.find(u => u.email === email && u.password === password);
+    if (found) {
+      setCurrentUser(found);
+      setIsAuthenticated(true);
+      // Set default tab based on role
+      if (found.vai_tro === 'ke_toan') setActiveTab('hoc-phi');
+      else if (found.vai_tro === 'giao_vien') setActiveTab('diem-danh');
+      else setActiveTab('dashboard');
+      showToast(`Đăng nhập thành công với vai trò [${found.vai_tro.toUpperCase()}]!`);
+      return true;
+    }
+    return false;
+  };
+
+  const handleRegister = (email, password, hoTen, vaiTro) => {
+    if (userAccounts.some(u => u.email === email)) {
+      return { success: false, message: 'Email này đã tồn tại trong hệ thống!' };
+    }
+    const newUser = { email, password, ho_ten: hoTen, vai_tro: vaiTro || 'dao_tao' };
+    setUserAccounts([...userAccounts, newUser]);
+    showToast('Đăng ký tài khoản thành công!');
+    return { success: true };
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    showToast('Đã đăng xuất tài khoản.', 'info');
+  };
+
+  // Role-based permission checker
+  const hasAccess = (tab) => {
+    if (!currentUser) return false;
+    const role = currentUser.vai_tro;
+    if (role === 'quan_tri_vien') return true;
+    if (role === 'dao_tao') return ['dashboard', 'khoa-hoc', 'hoc-vien', 'lop-hoc', 'ghi-danh', 'hoc-phi'].includes(tab);
+    if (role === 'ke_toan') return ['hoc-phi', 'bao-cao'].includes(tab);
+    if (role === 'giao_vien') return ['hoc-vien', 'diem-danh'].includes(tab);
+    return false;
+  };
+
+  // CSV Export utility
+  const exportToCSV = (filename, rows) => {
+    if (!rows || !rows.length) {
+      showToast('Không có dữ liệu để xuất!', 'error');
+      return;
+    }
+    const separator = ',';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+      keys.join(separator) +
+      '\n' +
+      rows.map(row => {
+        return keys.map(k => {
+          let cell = row[k] === null || row[k] === undefined ? '' : row[k];
+          cell = cell instanceof Date ? cell.toLocaleString() : cell.toString();
+          cell = cell.replace(/"/g, '""');
+          if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
+          return cell;
+        }).join(separator);
+      }).join('\n');
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast(`Đã xuất file ${filename}.csv thành công!`);
+  };
+
+  if (!isAuthenticated) {
+    return <AuthContainer onLogin={handleLogin} onRegister={handleRegister} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex text-slate-800 font-sans">
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-5 right-5 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-white font-medium text-sm transition-all animate-bounce ${
+          toast.type === 'error' ? 'bg-red-600' : toast.type === 'info' ? 'bg-blue-600' : 'bg-emerald-600'
+        }`}>
+          {toast.type === 'error' ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+      {/* Sidebar Navigation */}
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-slate-300 transition-all duration-300 flex flex-col z-30 shrink-0 shadow-xl`}>
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="p-2 bg-indigo-600 rounded-xl text-white font-bold shrink-0">
+              <Building2 className="w-6 h-6" />
+            </div>
+            {sidebarOpen && <span className="font-bold text-lg text-white whitespace-nowrap tracking-wide">QuanLyTT</span>}
+          </div>
+          <button 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
+          {hasAccess('dashboard') && (
+            <NavItem id="dashboard" label="Tổng quan" icon={LayoutDashboard} active={activeTab === 'dashboard'} onClick={setActiveTab} expanded={sidebarOpen} />
+          )}
+
+          {/* Menu Quản Trị (Mở rộng/Thu gọn với các mục con: Đào tạo, Kế toán, Giáo viên) */}
+          {(currentUser.vai_tro === 'quan_tri_vien' || currentUser.vai_tro === 'dao_tao' || currentUser.vai_tro === 'ke_toan' || currentUser.vai_tro === 'giao_vien') && (
+            <div className="space-y-1">
+              <button 
+                onClick={() => setQuanTriOpen(!quanTriOpen)}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm text-slate-300 hover:bg-slate-800 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <Shield className="w-5 h-5 text-indigo-400 shrink-0" />
+                  {sidebarOpen && <span>Quản trị</span>}
+                </div>
+                {sidebarOpen && (quanTriOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />)}
+              </button>
+
+              {quanTriOpen && sidebarOpen && (
+                <div className="pl-6 space-y-1 border-l border-slate-800 ml-4 my-1">
+                  {(currentUser.vai_tro === 'quan_tri_vien' || currentUser.vai_tro === 'dao_tao') && (
+                    <>
+                      <SubNavItem id="khoa-hoc" label="Khóa học" active={activeTab === 'khoa-hoc'} onClick={setActiveTab} />
+                      <SubNavItem id="lop-hoc" label="Lớp học" active={activeTab === 'lop-hoc'} onClick={setActiveTab} />
+                      <SubNavItem id="ghi-danh" label="Ghi danh" active={activeTab === 'ghi-danh'} onClick={setActiveTab} />
+                    </>
+                  )}
+                  {(currentUser.vai_tro === 'quan_tri_vien' || currentUser.vai_tro === 'dao_tao' || currentUser.vai_tro === 'giao_vien') && (
+                    <SubNavItem id="hoc-vien" label="Học viên" active={activeTab === 'hoc-vien'} onClick={setActiveTab} />
+                  )}
+                  {(currentUser.vai_tro === 'quan_tri_vien' || currentUser.vai_tro === 'dao_tao' || currentUser.vai_tro === 'ke_toan') && (
+                    <SubNavItem id="hoc-phi" label="Học phí" active={activeTab === 'hoc-phi'} onClick={setActiveTab} />
+                  )}
+                  {(currentUser.vai_tro === 'quan_tri_vien' || currentUser.vai_tro === 'ke_toan') && (
+                    <SubNavItem id="bao-cao" label="Thống kê" active={activeTab === 'bao-cao'} onClick={setActiveTab} />
+                  )}
+                  {(currentUser.vai_tro === 'quan_tri_vien' || currentUser.vai_tro === 'giao_vien') && (
+                    <SubNavItem id="diem-danh" label="Điểm danh" active={activeTab === 'diem-danh'} onClick={setActiveTab} />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {currentUser.vai_tro === 'quan_tri_vien' && (
+            <NavItem id="quan-ly-tai-khoan" label="Quản lý Tài khoản" icon={Users} active={activeTab === 'quan-ly-tai-khoan'} onClick={setActiveTab} expanded={sidebarOpen} />
+          )}
+        </nav>
+
+        {/* User Info & Footer */}
+        <div className="p-3 border-t border-slate-800">
+          {sidebarOpen ? (
+            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-800/60">
+              <div className="truncate mr-2">
+                <p className="text-xs text-slate-400 truncate">{currentUser.email}</p>
+                <p className="text-sm font-semibold text-white truncate">{currentUser.ho_ten}</p>
+              </div>
+              <button onClick={handleLogout} title="Đăng xuất" className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-slate-400 transition-colors">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button onClick={handleLogout} title="Đăng xuất" className="w-full flex justify-center p-3 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-slate-400">
+              <LogOut className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header Bar */}
+        <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-sm z-20">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-slate-800">
+              {activeTab === 'dashboard' && 'Tổng Quan Hệ Thống'}
+              {activeTab === 'khoa-hoc' && 'Quản Lý Khóa Học'}
+              {activeTab === 'hoc-vien' && 'Quản Lý Hồ Sơ Học Viên'}
+              {activeTab === 'lop-hoc' && 'Quản Lý Lớp Học'}
+              {activeTab === 'ghi-danh' && 'Quản Lý Ghi Danh'}
+              {activeTab === 'hoc-phi' && 'Quản Lý Học Phí & Tài Chính'}
+              {activeTab === 'bao-cao' && 'Thống Kê & Báo Cáo'}
+              {activeTab === 'diem-danh' && 'Sổ Điểm Danh Học Viên'}
+              {activeTab === 'quan-ly-tai-khoan' && 'Quản Lý Tài Khoản & Phân Quyền'}
+            </h1>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 uppercase">
+                {currentUser.vai_tro === 'quan_tri_vien' ? 'Quản trị viên' :
+                 currentUser.vai_tro === 'dao_tao' ? 'Đào tạo' :
+                 currentUser.vai_tro === 'ke_toan' ? 'Kế toán' : 'Giáo viên'}
+              </span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+              {currentUser.ho_ten.charAt(0)}
+            </div>
+          </div>
+        </header>
+
+        {/* Tab View Container with security check */}
+        <main className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+          {!hasAccess(activeTab) ? (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-8 text-center space-y-3">
+              <ShieldAlert className="w-12 h-12 text-red-500 mx-auto" />
+              <h2 className="text-lg font-bold text-red-800">Truy Cập Bị Từ Chối</h2>
+              <p className="text-sm text-red-600">Tài khoản của bạn không có quyền truy cập vào chức năng này theo phân quyền hệ thống.</p>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'dashboard' && (
+                <DashboardView 
+                  hocVienList={hocVienList} 
+                  khoaHocList={khoaHocList} 
+                  lopHocList={lopHocList} 
+                  ghiDanhList={ghiDanhList} 
+                  hocPhiList={hocPhiList} 
+                />
+              )}
+
+              {activeTab === 'khoa-hoc' && (
+                <KhoaHocView 
+                  data={khoaHocList} 
+                  setData={setKhoaHocList} 
+                  userRole={currentUser.vai_tro} 
+                  showToast={showToast} 
+                  exportToCSV={exportToCSV}
+                />
+              )}
+
+              {activeTab === 'hoc-vien' && (
+                <HocVienView 
+                  data={hocVienList} 
+                  setData={setHocVienList} 
+                  userRole={currentUser.vai_tro} 
+                  showToast={showToast} 
+                  exportToCSV={exportToCSV}
+                />
+              )}
+
+              {activeTab === 'lop-hoc' && (
+                <LopHocView 
+                  lopHocList={lopHocList} 
+                  setLopHocList={setLopHocList} 
+                  khoaHocList={khoaHocList} 
+                  userRole={currentUser.vai_tro} 
+                  showToast={showToast} 
+                  exportToCSV={exportToCSV}
+                />
+              )}
+
+              {activeTab === 'ghi-danh' && (
+                <GhiDanhView 
+                  ghiDanhList={ghiDanhList} 
+                  setGhiDanhList={setGhiDanhList} 
+                  hocVienList={hocVienList} 
+                  lopHocList={lopHocList} 
+                  hocPhiList={hocPhiList}
+                  setHocPhiList={setHocPhiList}
+                  khoaHocList={khoaHocList}
+                  userRole={currentUser.vai_tro} 
+                  showToast={showToast} 
+                  exportToCSV={exportToCSV}
+                />
+              )}
+
+              {activeTab === 'hoc-phi' && (
+                <HocPhiView 
+                  hocPhiList={hocPhiList} 
+                  setHocPhiList={setHocPhiList} 
+                  ghiDanhList={ghiDanhList} 
+                  hocVienList={hocVienList} 
+                  lopHocList={lopHocList} 
+                  userRole={currentUser.vai_tro} 
+                  showToast={showToast} 
+                  exportToCSV={exportToCSV}
+                />
+              )}
+
+              {activeTab === 'bao-cao' && (
+                <BaoCaoView 
+                  hocVienList={hocVienList}
+                  khoaHocList={khoaHocList}
+                  lopHocList={lopHocList}
+                  ghiDanhList={ghiDanhList}
+                  hocPhiList={hocPhiList}
+                  exportToCSV={exportToCSV}
+                />
+              )}
+
+              {activeTab === 'diem-danh' && (
+                <DiemDanhView 
+                  diemDanhList={diemDanhList}
+                  setDiemDanhList={setDiemDanhList}
+                  lopHocList={lopHocList}
+                  hocVienList={hocVienList}
+                  ghiDanhList={ghiDanhList}
+                  currentUser={currentUser}
+                  showToast={showToast}
+                />
+              )}
+
+              {activeTab === 'quan-ly-tai-khoan' && currentUser.vai_tro === 'quan_tri_vien' && (
+                <QuanLyTaiKhoanView 
+                  userAccounts={userAccounts}
+                  setUserAccounts={setUserAccounts}
+                  showToast={showToast}
+                />
+              )}
+            </>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// Sidebar Nav Item Helpers
+function NavItem({ id, label, icon: Icon, active, onClick, expanded }) {
+  return (
+    <button
+      onClick={() => onClick(id)}
+      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all ${
+        active 
+          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' 
+          : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+      }`}
+      title={!expanded ? label : ''}
+    >
+      <Icon className="w-5 h-5 shrink-0" />
+      {expanded && <span>{label}</span>}
+    </button>
+  );
+}
+
+function SubNavItem({ id, label, active, onClick }) {
+  return (
+    <button
+      onClick={() => onClick(id)}
+      className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+        active 
+          ? 'bg-indigo-600/30 text-indigo-300 font-semibold' 
+          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+// --- 1. MÀN HÌNH ĐĂNG NHẬP & ĐĂNG KÝ ---
+function AuthContainer({ onLogin, onRegister }) {
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [hoTen, setHoTen] = useState('');
+  const [vaiTro, setVaiTro] = useState('dao_tao');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (isRegisterMode) {
+      if (!email || !password || !hoTen) {
+        setErrorMsg('Vui lòng điền đầy đủ thông tin đăng ký!');
+        return;
+      }
+      const res = onRegister(email, password, hoTen, vaiTro);
+      if (res.success) {
+        setSuccessMsg('Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.');
+        setIsRegisterMode(false);
+        setPassword('');
+      } else {
+        setErrorMsg(res.message);
+      }
+    } else {
+      if (!email || !password) {
+        setErrorMsg('Vui lòng nhập email và mật khẩu!');
+        return;
+      }
+      const success = onLogin(email, password);
+      if (!success) {
+        setErrorMsg('Sai email hoặc mật khẩu không chính xác!');
+      }
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 space-y-6">
+        <div className="text-center space-y-2">
+          <div className="inline-flex p-3 bg-indigo-600 text-white rounded-2xl mb-2">
+            <Building2 className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800">Hệ Thống QuanLyTT</h2>
+          <p className="text-slate-500 text-sm">
+            {isRegisterMode ? 'Đăng ký tài khoản mới' : 'Đăng nhập phân quyền trung tâm đào tạo'}
+          </p>
+        </div>
+
+        {errorMsg && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-xs flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleAuthSubmit} className="space-y-4">
+          {isRegisterMode && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Họ và tên</label>
+                <input 
+                  type="text" 
+                  value={hoTen}
+                  onChange={(e) => setHoTen(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                  placeholder="Nguyễn Văn A"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Vai trò hệ thống</label>
+                <select 
+                  value={vaiTro} 
+                  onChange={(e) => setVaiTro(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white"
+                >
+                  <option value="dao_tao">Đào Tạo</option>
+                  <option value="ke_toan">Kế Toán</option>
+                  <option value="giao_vien">Giáo Viên</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Email đăng nhập</label>
+            <input 
+              type="email" 
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              placeholder="nhanvien@quanlytt.edu.vn"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Mật khẩu</label>
+            <input 
+              type="password" 
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button 
+            type="submit"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition shadow-md shadow-indigo-500/20 text-sm flex items-center justify-center gap-2"
+          >
+            {isRegisterMode ? <Plus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
+            <span>{isRegisterMode ? 'Đăng Ký Tài Khoản' : 'Đăng Nhập Hệ Thống'}</span>
+          </button>
+        </form>
+
+        <div className="text-center pt-2 border-t border-slate-100">
+          <button 
+            type="button"
+            onClick={() => { setIsRegisterMode(!isRegisterMode); setErrorMsg(''); setSuccessMsg(''); }}
+            className="text-xs text-indigo-600 hover:underline font-medium"
+          >
+            {isRegisterMode ? 'Đã có tài khoản? Quay lại đăng nhập' : 'Chưa có tài khoản? Đăng ký ngay'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 2. DASHBOARD VIEW ---
+function DashboardView({ hocVienList, khoaHocList, lopHocList, ghiDanhList, hocPhiList }) {
+  const stats = useMemo(() => {
+    const tongHocPhiDaThu = hocPhiList
+      .filter(hp => hp.trang_thai === 'DaThanhToan')
+      .reduce((sum, hp) => sum + Number(hp.so_tien), 0);
+
+    const tongHocPhiChuaThu = hocPhiList
+      .filter(hp => hp.trang_thai === 'ChuaThanhToan')
+      .reduce((sum, hp) => sum + Number(hp.so_tien), 0);
+
+    return {
+      tongHocVien: hocVienList.length,
+      tongKhoaHoc: khoaHocList.length,
+      tongLopHoc: lopHocList.length,
+      tongGhiDanh: ghiDanhList.length,
+      tongHocPhiDaThu,
+      tongHocPhiChuaThu
+    };
+  }, [hocVienList, khoaHocList, lopHocList, ghiDanhList, hocPhiList]);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatCard title="Tổng Học Viên" value={stats.tongHocVien} icon={GraduationCap} color="bg-blue-500" />
+        <StatCard title="Khóa Học Đang Mở" value={stats.tongKhoaHoc} icon={BookOpen} color="bg-emerald-500" />
+        <StatCard title="Lớp Học" value={stats.tongLopHoc} icon={Users} color="bg-indigo-500" />
+        <StatCard title="Lượt Ghi Danh" value={stats.tongGhiDanh} icon={ClipboardList} color="bg-amber-500" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase">Học Phí Đã Thu Thực Tế</p>
+            <p className="text-2xl font-bold text-emerald-600 mt-1">{formatVND(stats.tongHocPhiDaThu)}</p>
+          </div>
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <DollarSign className="w-8 h-8" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase">Học Phí Còn Nợ / Chưa Thu</p>
+            <p className="text-2xl font-bold text-amber-600 mt-1">{formatVND(stats.tongHocPhiChuaThu)}</p>
+          </div>
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+            <TrendingUp className="w-8 h-8" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-indigo-600" />
+            <span>Các Lớp Học Sắp Khai Giảng</span>
+          </h3>
+          <div className="divide-y divide-slate-100">
+            {lopHocList.map(lh => {
+              const kh = khoaHocList.find(k => k.id === lh.khoa_hoc_id);
+              return (
+                <div key={lh.id} className="py-3.5 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-slate-800 text-sm">{lh.ten_lop}</h4>
+                    <p className="text-xs text-slate-500">{kh?.ten_khoa_hoc || 'Khóa học'} • GV: {lh.giao_vien}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100">
+                      Khai giảng: {lh.ngay_bat_dau}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-4">
+          <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-indigo-600" />
+            <span>Ghi Danh Mới Nhất</span>
+          </h3>
+          <div className="space-y-3">
+            {ghiDanhList.slice(0, 5).map(gd => {
+              const hv = hocVienList.find(h => h.id === gd.hoc_vien_id);
+              const lh = lopHocList.find(l => l.id === gd.lop_hoc_id);
+              return (
+                <div key={gd.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs space-y-1">
+                  <div className="flex justify-between font-semibold text-slate-800">
+                    <span>{hv?.ho_ten || 'Học viên'}</span>
+                    <span className="text-slate-400">{gd.ngay_ghi_danh}</span>
+                  </div>
+                  <p className="text-slate-500 truncate">{lh?.ten_lop}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon: Icon, color }) {
+  return (
+    <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+      <div className={`p-3.5 text-white rounded-2xl ${color} shadow-md`}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-slate-500 uppercase">{title}</p>
+        <p className="text-2xl font-bold text-slate-800 mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+// --- 3. QUẢN LÝ KHÓA HỌC (KHOA HOC VIEW) ---
+function KhoaHocView({ data, setData, userRole, showToast, exportToCSV }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentModalData, setCurrentModalData] = useState(null);
+
+  const filteredData = useMemo(() => {
+    return data.filter(item => {
+      const matchSearch = item.ten_khoa_hoc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.ma_khoa_hoc.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchStatus = filterStatus === 'ALL' || item.trang_thai === filterStatus;
+      return matchSearch && matchStatus;
+    });
+  }, [data, searchTerm, filterStatus]);
+
+  const handleSave = (formData) => {
+    if (userRole === 'giao_vien' || userRole === 'ke_toan') {
+      showToast('Bạn không có quyền chỉnh sửa khóa học!', 'error');
+      return;
+    }
+    if (formData.id) {
+      setData(data.map(item => item.id === formData.id ? formData : item));
+      showToast('Cập nhật thông tin khóa học thành công!');
+    } else {
+      const newItem = { ...formData, id: Date.now().toString() };
+      setData([newItem, ...data]);
+      showToast('Thêm khóa học mới thành công!');
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleDelete = (id) => {
+    if (userRole !== 'quan_tri_vien') {
+      showToast('Bạn không có quyền xóa dữ liệu khóa học!', 'error');
+      return;
+    }
+    if (window.confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
+      setData(data.filter(item => item.id !== id));
+      showToast('Xóa khóa học thành công!');
+    }
+  };
+
+  const canEdit = userRole === 'quan_tri_vien' || userRole === 'dao_tao';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto flex-1">
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+            <input 
+              type="text" 
+              placeholder="Tìm mã hoặc tên khóa học..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+          </div>
+          <select 
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none"
+          >
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="DangMo">Đang Mở</option>
+            <option value="TamDung">Tạm Dừng</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button 
+            onClick={() => exportToCSV('KhoaHoc', filteredData)}
+            className="px-3.5 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-medium flex items-center gap-2 transition"
+          >
+            <Download className="w-4 h-4" />
+            <span>Xuất CSV</span>
+          </button>
+          {canEdit && (
+            <button 
+              onClick={() => { setCurrentModalData(null); setIsModalOpen(true); }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-md shadow-indigo-600/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm Khóa Học</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase font-semibold">
+                <th className="py-3.5 px-4">Mã KH</th>
+                <th className="py-3.5 px-4">Tên Khóa Học</th>
+                <th className="py-3.5 px-4">Học Phí</th>
+                <th className="py-3.5 px-4">Thời Lượng</th>
+                <th className="py-3.5 px-4">Trạng Thái</th>
+                {canEdit && <th className="py-3.5 px-4 text-right">Thao Tác</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+              {filteredData.map(item => (
+                <tr key={item.id} className="hover:bg-slate-50/80 transition">
+                  <td className="py-3.5 px-4 font-mono font-semibold text-indigo-600">{item.ma_khoa_hoc}</td>
+                  <td className="py-3.5 px-4 font-medium text-slate-900">{item.ten_khoa_hoc}</td>
+                  <td className="py-3.5 px-4 text-emerald-600 font-semibold">{formatVND(item.hoc_phi)}</td>
+                  <td className="py-3.5 px-4">{item.thoi_luong}</td>
+                  <td className="py-3.5 px-4">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${
+                      item.trang_thai === 'DangMo' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      {item.trang_thai === 'DangMo' ? 'Đang Mở' : 'Tạm Dừng'}
+                    </span>
+                  </td>
+                  {canEdit && (
+                    <td className="py-3.5 px-4 text-right space-x-2">
+                      <button onClick={() => { setCurrentModalData(item); setIsModalOpen(true); }} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDelete(item.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <KhoaHocModal 
+          initialData={currentModalData} 
+          onClose={() => setIsModalOpen(false)} 
+          onSave={handleSave} 
+        />
+      )}
+    </div>
+  );
+}
+
+function KhoaHocModal({ initialData, onClose, onSave }) {
+  const [formData, setFormData] = useState(initialData || {
+    ma_khoa_hoc: '',
+    ten_khoa_hoc: '',
+    mo_ta: '',
+    hoc_phi: 0,
+    thoi_luong: '',
+    trang_thai: 'DangMo'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+        <div className="flex justify-between items-center border-b pb-3">
+          <h3 className="font-bold text-lg text-slate-800">{initialData ? 'Sửa Khóa Học' : 'Thêm Khóa Học Mới'}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Mã khóa học</label>
+            <input required type="text" value={formData.ma_khoa_hoc} onChange={e => setFormData({...formData, ma_khoa_hoc: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Tên khóa học</label>
+            <input required type="text" value={formData.ten_khoa_hoc} onChange={e => setFormData({...formData, ten_khoa_hoc: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Học phí (VND)</label>
+            <input required type="number" value={formData.hoc_phi} onChange={e => setFormData({...formData, hoc_phi: Number(e.target.value)})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Thời lượng (VD: 36 buổi)</label>
+            <input required type="text" value={formData.thoi_luong} onChange={e => setFormData({...formData, thoi_luong: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Trạng thái</label>
+            <select value={formData.trang_thai} onChange={e => setFormData({...formData, trang_thai: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm">
+              <option value="DangMo">Đang Mở</option>
+              <option value="TamDung">Tạm Dừng</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-2 pt-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-xl text-sm font-medium text-slate-600">Hủy</button>
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium">Lưu Thông Tin</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- 4. QUẢN LÝ HỌC VIÊN (HOC VIEN VIEW) ---
+function HocVienView({ data, setData, userRole, showToast, exportToCSV }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [currentModalData, setCurrentModalData] = useState(null);
+
+  const filteredData = useMemo(() => {
+    return data.filter(item => 
+      item.ho_ten.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.ma_hoc_vien.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.dien_thoai.includes(searchTerm)
+    );
+  }, [data, searchTerm]);
+
+  const handleSave = (formData) => {
+    if (userRole === 'ke_toan') {
+      showToast('Kế toán không có quyền chỉnh sửa hồ sơ học viên!', 'error');
+      return;
+    }
+    if (formData.id) {
+      setData(data.map(item => item.id === formData.id ? formData : item));
+      showToast('Cập nhật hồ sơ học viên thành công!');
+    } else {
+      const newItem = { ...formData, id: Date.now().toString() };
+      setData([newItem, ...data]);
+      showToast('Thêm học viên mới thành công!');
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleBatchImport = (importedStudents) => {
+    setData([...importedStudents, ...data]);
+    showToast(`Đã nhập thành công ${importedStudents.length} học viên từ file Excel!`);
+    setIsImportModalOpen(false);
+  };
+
+  const handleDelete = (id) => {
+    if (userRole !== 'quan_tri_vien' && userRole !== 'dao_tao') {
+      showToast('Bạn không có quyền xóa hồ sơ học viên!', 'error');
+      return;
+    }
+    if (window.confirm('Xóa thông tin học viên sẽ ảnh hưởng các bản ghi ghi danh liên quan. Xác nhận xóa?')) {
+      setData(data.filter(item => item.id !== id));
+      showToast('Đã xóa học viên!');
+    }
+  };
+
+  const canEdit = userRole === 'quan_tri_vien' || userRole === 'dao_tao';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="relative w-full sm:w-72">
+          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Tìm theo tên, mã HV hoặc SĐT..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button 
+            onClick={() => exportToCSV('HocVien', filteredData)}
+            className="px-3.5 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-medium flex items-center gap-2 transition"
+          >
+            <Download className="w-4 h-4" />
+            <span>Xuất CSV</span>
+          </button>
+
+          {canEdit && (
+            <>
+              <button 
+                onClick={() => setIsImportModalOpen(true)}
+                className="px-3.5 py-2 bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 rounded-xl text-sm font-medium flex items-center gap-2 transition"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Import Excel</span>
+              </button>
+              <button 
+                onClick={() => { setCurrentModalData(null); setIsModalOpen(true); }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-md shadow-indigo-600/20"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Thêm Học Viên</span>
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase font-semibold">
+                <th className="py-3.5 px-4">Mã HV</th>
+                <th className="py-3.5 px-4">Họ và Tên</th>
+                <th className="py-3.5 px-4">Số Điện Thoại</th>
+                <th className="py-3.5 px-4">Email</th>
+                <th className="py-3.5 px-4">Địa Chỉ</th>
+                {canEdit && <th className="py-3.5 px-4 text-right">Thao Tác</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+              {filteredData.map(item => (
+                <tr key={item.id} className="hover:bg-slate-50/80 transition">
+                  <td className="py-3.5 px-4 font-mono font-semibold text-indigo-600">{item.ma_hoc_vien}</td>
+                  <td className="py-3.5 px-4 font-medium text-slate-900">{item.ho_ten}</td>
+                  <td className="py-3.5 px-4">{item.dien_thoai}</td>
+                  <td className="py-3.5 px-4 text-slate-500">{item.email}</td>
+                  <td className="py-3.5 px-4 text-slate-500 max-w-xs truncate">{item.dia_chi}</td>
+                  {canEdit && (
+                    <td className="py-3.5 px-4 text-right space-x-2">
+                      <button onClick={() => { setCurrentModalData(item); setIsModalOpen(true); }} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDelete(item.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <HocVienModal 
+          initialData={currentModalData} 
+          onClose={() => setIsModalOpen(false)} 
+          onSave={handleSave} 
+        />
+      )}
+
+      {isImportModalOpen && (
+        <HocVienImportModal 
+          existingHocViens={data}
+          onClose={() => setIsImportModalOpen(false)}
+          onImport={handleBatchImport}
+          showToast={showToast}
+        />
+      )}
+    </div>
+  );
+}
+
+function HocVienImportModal({ existingHocViens, onClose, onImport, showToast }) {
+  const [previewList, setPreviewList] = useState([]);
+  const [errorList, setErrorList] = useState([]);
+
+  // Load XLSX dynamic library if needed
+  const ensureXLSXLoaded = async () => {
+    if (window.XLSX) return window.XLSX;
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      script.onload = () => resolve(window.XLSX);
+      script.onerror = () => reject(new Error('Không thể nạp thư viện XLSX'));
+      document.head.appendChild(script);
+    });
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const XLSX = await ensureXLSXLoaded();
+      const reader = new FileReader();
+
+      reader.onload = (evt) => {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+          if (!jsonData || jsonData.length === 0) {
+            showToast('File Excel không có dữ liệu!', 'error');
+            return;
+          }
+
+          const validRows = [];
+          const errors = [];
+          const existingCodes = new Set(existingHocViens.map(h => h.ma_hoc_vien));
+          const currentFileCodes = new Set();
+
+          jsonData.forEach((row, idx) => {
+            const rowNum = idx + 2; // Excel row index accounting for header
+            const maHV = String(row['ma_hoc_vien'] || row['Mã HV'] || row['Mã học viên'] || '').trim();
+            const hoTen = String(row['ho_ten'] || row['Họ tên'] || row['Họ và tên'] || '').trim();
+            const ngaySinh = String(row['ngay_sinh'] || row['Ngày sinh'] || '').trim();
+            const gioiTinh = String(row['gioi_tinh'] || row['Giới tính'] || 'Nam').trim();
+            const dienThoai = String(row['dien_thoai'] || row['Điện thoại'] || row['SĐT'] || '').trim();
+            const email = String(row['email'] || row['Email'] || '').trim();
+            const diaChi = String(row['dia_chi'] || row['Địa chỉ'] || '').trim();
+
+            let rowError = null;
+
+            if (!maHV) {
+              rowError = 'Thiếu mã học viên';
+            } else if (!hoTen) {
+              rowError = 'Thiếu họ tên học viên';
+            } else if (existingCodes.has(maHV)) {
+              rowError = `Mã học viên "${maHV}" đã tồn tại trong hệ thống`;
+            } else if (currentFileCodes.has(maHV)) {
+              rowError = `Mã học viên "${maHV}" bị trùng trong file Excel`;
+            }
+
+            if (rowError) {
+              errors.push({ rowNum, maHV, hoTen, reason: rowError });
+            } else {
+              currentFileCodes.add(maHV);
+              validRows.push({
+                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                ma_hoc_vien: maHV,
+                ho_ten: hoTen,
+                ngay_sinh: ngaySinh || '2000-01-01',
+                gioi_tinh: gioiTinh || 'Nam',
+                dien_thoai: dienThoai || '0900000000',
+                email: email || `${maHV.toLowerCase()}@gmail.com`,
+                dia_chi: diaChi || 'Chưa cập nhật'
+              });
+            }
+          });
+
+          setPreviewList(validRows);
+          setErrorList(errors);
+
+          if (validRows.length === 0) {
+            showToast('Không tìm thấy dòng hợp lệ nào trong file!', 'error');
+          } else {
+            showToast(`Đã đọc ${validRows.length} dòng hợp lệ, ${errors.length} dòng lỗi.`);
+          }
+        } catch (err) {
+          showToast('Đã xảy ra lỗi khi đọc file Excel!', 'error');
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      showToast('Không thể nạp trình xử lý Excel!', 'error');
+    }
+  };
+
+  const downloadSampleExcel = async () => {
+    try {
+      const XLSX = await ensureXLSXLoaded();
+      const sampleData = [
+        {
+          ma_hoc_vien: 'HV099',
+          ho_ten: 'Nguyễn Văn Mẫu',
+          ngay_sinh: '2002-06-15',
+          gioi_tinh: 'Nam',
+          dien_thoai: '0912999888',
+          email: 'mau.nguyen@gmail.com',
+          dia_chi: '123 Đường ABC, Q1, TP.HCM'
+        },
+        {
+          ma_hoc_vien: 'HV100',
+          ho_ten: 'Trần Thị Thu Mẫu',
+          ngay_sinh: '2003-09-20',
+          gioi_tinh: 'Nữ',
+          dien_thoai: '0988777666',
+          email: 'thu.tran@gmail.com',
+          dia_chi: '456 Đường XYZ, Q3, TP.HCM'
+        }
+      ];
+
+      const worksheet = XLSX.utils.json_to_sheet(sampleData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'HocVien');
+      XLSX.writeFile(workbook, 'Mau_Import_HocVien.xlsx');
+      showToast('Đã tải file Excel mẫu!');
+    } catch (e) {
+      showToast('Không thể tạo file mẫu!', 'error');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
+        <div className="flex justify-between items-center border-b pb-3">
+          <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+            <span>Import Danh Sách Học Viên Từ Excel</span>
+          </h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="space-y-3 shrink-0">
+          <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div>
+              <p className="text-xs font-semibold text-slate-700">Tải file mẫu định dạng Excel (.xlsx)</p>
+              <p className="text-xs text-slate-500">File chứa các cột ma_hoc_vien, ho_ten, ngay_sinh, gioi_tinh, dien_thoai, email, dia_chi</p>
+            </div>
+            <button 
+              type="button" 
+              onClick={downloadSampleExcel} 
+              className="px-3 py-1.5 text-xs font-semibold bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 transition shrink-0"
+            >
+              Tải File Mẫu
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Chọn File Excel từ máy tính</label>
+            <input 
+              type="file" 
+              accept=".xlsx, .xls"
+              onChange={handleFileUpload} 
+              className="w-full border rounded-xl px-3 py-2 text-sm bg-slate-50 text-slate-600 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+            />
+          </div>
+        </div>
+
+        {/* Dynamic Preview & Error Container */}
+        <div className="flex-1 overflow-y-auto space-y-3 min-h-[180px] border-t pt-3">
+          {errorList.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 space-y-1 text-xs text-red-700">
+              <p className="font-semibold flex items-center gap-1">
+                <AlertCircle className="w-4 h-4" />
+                <span>Phát hiện {errorList.length} dòng bị lỗi (Sẽ bỏ qua khi import):</span>
+              </p>
+              <ul className="list-disc pl-5 space-y-0.5 max-h-24 overflow-y-auto">
+                {errorList.map((err, idx) => (
+                  <li key={idx}>Dòng {err.rowNum}: {err.reason} ({err.hoTen || err.maHV || 'Chưa rõ'})</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div>
+            <p className="text-xs font-semibold text-slate-700 mb-2">Xem trước các bản ghi hợp lệ ({previewList.length}):</p>
+            {previewList.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 text-xs border border-dashed rounded-xl">
+                Chưa có dữ liệu. Vui lòng chọn file Excel để xem trước.
+              </div>
+            ) : (
+              <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 border-b font-semibold text-slate-600">
+                    <tr>
+                      <th className="p-2">Mã HV</th>
+                      <th className="p-2">Họ tên</th>
+                      <th className="p-2">Điện thoại</th>
+                      <th className="p-2">Email</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {previewList.map((item, i) => (
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="p-2 font-mono font-semibold text-indigo-600">{item.ma_hoc_vien}</td>
+                        <td className="p-2 font-medium">{item.ho_ten}</td>
+                        <td className="p-2">{item.dien_thoai}</td>
+                        <td className="p-2 text-slate-500">{item.email}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t pt-3 shrink-0">
+          <button type="button" onClick={onClose} className="px-4 py-2 border rounded-xl text-sm font-medium text-slate-600">Đóng</button>
+          <button 
+            type="button" 
+            disabled={previewList.length === 0}
+            onClick={() => onImport(previewList)} 
+            className={`px-4 py-2 rounded-xl text-sm font-medium text-white transition ${
+              previewList.length > 0 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-300 cursor-not-allowed'
+            }`}
+          >
+            Xác Nhận Import ({previewList.length})
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HocVienModal({ initialData, onClose, onSave }) {
+  const [formData, setFormData] = useState(initialData || {
+    ma_hoc_vien: '',
+    ho_ten: '',
+    ngay_sinh: '',
+    gioi_tinh: 'Nam',
+    dien_thoai: '',
+    email: '',
+    dia_chi: ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+        <div className="flex justify-between items-center border-b pb-3">
+          <h3 className="font-bold text-lg text-slate-800">{initialData ? 'Sửa Hồ Sơ Học Viên' : 'Thêm Học Viên Mới'}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Mã học viên</label>
+            <input required type="text" value={formData.ma_hoc_vien} onChange={e => setFormData({...formData, ma_hoc_vien: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Họ và tên</label>
+            <input required type="text" value={formData.ho_ten} onChange={e => setFormData({...formData, ho_ten: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Ngày sinh</label>
+              <input type="date" value={formData.ngay_sinh} onChange={e => setFormData({...formData, ngay_sinh: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Giới tính</label>
+              <select value={formData.gioi_tinh} onChange={e => setFormData({...formData, gioi_tinh: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm">
+                <option value="Nam">Nam</option>
+                <option value="Nữ">Nữ</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Số điện thoại</label>
+            <input required type="text" value={formData.dien_thoai} onChange={e => setFormData({...formData, dien_thoai: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+            <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Địa chỉ</label>
+            <input type="text" value={formData.dia_chi} onChange={e => setFormData({...formData, dia_chi: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div className="flex justify-end gap-2 pt-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-xl text-sm font-medium text-slate-600">Hủy</button>
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium">Lưu Thông Tin</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- 5. QUẢN LÝ LỚP HỌC (LOP HOC VIEW) ---
+function LopHocView({ lopHocList, setLopHocList, khoaHocList, userRole, showToast, exportToCSV }) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentModalData, setCurrentModalData] = useState(null);
+
+  const filteredData = useMemo(() => {
+    return lopHocList.filter(item => 
+      item.ten_lop.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.ma_lop.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [lopHocList, searchTerm]);
+
+  const handleSave = (formData) => {
+    if (userRole === 'giao_vien' || userRole === 'ke_toan') {
+      showToast('Bạn không có quyền quản lý lớp học!', 'error');
+      return;
+    }
+    if (formData.id) {
+      setLopHocList(lopHocList.map(item => item.id === formData.id ? formData : item));
+      showToast('Cập nhật thông tin lớp học thành công!');
+    } else {
+      const newItem = { ...formData, id: Date.now().toString() };
+      setLopHocList([newItem, ...lopHocList]);
+      showToast('Tạo lớp học mới thành công!');
+    }
+    setIsModalOpen(false);
+  };
+
+  const canEdit = userRole === 'quan_tri_vien' || userRole === 'dao_tao';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="relative w-full sm:w-72">
+          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Tìm theo mã hoặc tên lớp..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button 
+            onClick={() => exportToCSV('LopHoc', filteredData)}
+            className="px-3.5 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-medium flex items-center gap-2 transition"
+          >
+            <Download className="w-4 h-4" />
+            <span>Xuất CSV</span>
+          </button>
+          {canEdit && (
+            <button 
+              onClick={() => { setCurrentModalData(null); setIsModalOpen(true); }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-md shadow-indigo-600/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm Lớp Học</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase font-semibold">
+                <th className="py-3.5 px-4">Mã Lớp</th>
+                <th className="py-3.5 px-4">Tên Lớp Học</th>
+                <th className="py-3.5 px-4">Khóa Học Tương Ứng</th>
+                <th className="py-3.5 px-4">Giáo Viên</th>
+                <th className="py-3.5 px-4">Lịch Học</th>
+                {canEdit && <th className="py-3.5 px-4 text-right">Thao Tác</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+              {filteredData.map(item => {
+                const kh = khoaHocList.find(k => k.id === item.khoa_hoc_id);
+                return (
+                  <tr key={item.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-mono font-semibold text-indigo-600">{item.ma_lop}</td>
+                    <td className="py-3.5 px-4 font-medium text-slate-900">{item.ten_lop}</td>
+                    <td className="py-3.5 px-4 text-slate-600">{kh ? kh.ten_khoa_hoc : 'Chưa phân loại'}</td>
+                    <td className="py-3.5 px-4">{item.giao_vien}</td>
+                    <td className="py-3.5 px-4 text-xs bg-slate-50 rounded-lg">{item.lich_hoc}</td>
+                    {canEdit && (
+                      <td className="py-3.5 px-4 text-right space-x-2">
+                        <button onClick={() => { setCurrentModalData(item); setIsModalOpen(true); }} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <LopHocModal 
+          initialData={currentModalData} 
+          khoaHocList={khoaHocList}
+          onClose={() => setIsModalOpen(false)} 
+          onSave={handleSave} 
+        />
+      )}
+    </div>
+  );
+}
+
+function LopHocModal({ initialData, khoaHocList, onClose, onSave }) {
+  const [formData, setFormData] = useState(initialData || {
+    ma_lop: '',
+    ten_lop: '',
+    khoa_hoc_id: khoaHocList[0]?.id || '',
+    giao_vien: '',
+    ngay_bat_dau: '',
+    ngay_ket_thuc: '',
+    lich_hoc: '',
+    si_so_toi_da: 20,
+    trang_thai: 'DangMo'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+        <div className="flex justify-between items-center border-b pb-3">
+          <h3 className="font-bold text-lg text-slate-800">{initialData ? 'Sửa Lớp Học' : 'Tạo Lớp Học Mới'}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Mã Lớp</label>
+            <input required type="text" value={formData.ma_lop} onChange={e => setFormData({...formData, ma_lop: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Tên Lớp Học</label>
+            <input required type="text" value={formData.ten_lop} onChange={e => setFormData({...formData, ten_lop: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Thuộc Khóa Học</label>
+            <select value={formData.khoa_hoc_id} onChange={e => setFormData({...formData, khoa_hoc_id: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm">
+              {khoaHocList.map(kh => (
+                <option key={kh.id} value={kh.id}>{kh.ten_khoa_hoc}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Giảng Viên Phụ Trách</label>
+            <input required type="text" value={formData.giao_vien} onChange={e => setFormData({...formData, giao_vien: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Lịch Học (Ca/Thứ)</label>
+            <input required type="text" value={formData.lich_hoc} onChange={e => setFormData({...formData, lich_hoc: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" placeholder="18:30 - 21:00 (Thứ 2-4-6)" />
+          </div>
+          <div className="flex justify-end gap-2 pt-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-xl text-sm font-medium text-slate-600">Hủy</button>
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium">Lưu Thông Tin</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- 6. QUẢN LÝ GHI DANH (GHI DANH VIEW) ---
+function GhiDanhView({ ghiDanhList, setGhiDanhList, hocVienList, lopHocList, hocPhiList, setHocPhiList, khoaHocList, userRole, showToast, exportToCSV }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCreateGhiDanh = (formData) => {
+    if (userRole === 'giao_vien' || userRole === 'ke_toan') {
+      showToast('Bạn không có quyền thực hiện ghi danh!', 'error');
+      return;
+    }
+    const duplicate = ghiDanhList.find(gd => gd.hoc_vien_id === formData.hoc_vien_id && gd.lop_hoc_id === formData.lop_hoc_id);
+    if (duplicate) {
+      showToast('Học viên này đã ghi danh vào lớp học được chọn!', 'error');
+      return;
+    }
+
+    const newGhiDanhId = Date.now().toString();
+    const newGhiDanh = {
+      id: newGhiDanhId,
+      ...formData,
+      ngay_ghi_danh: new Date().toISOString().split('T')[0]
+    };
+
+    setGhiDanhList([newGhiDanh, ...ghiDanhList]);
+
+    const selectedLop = lopHocList.find(l => l.id === formData.lop_hoc_id);
+    const selectedKhoa = khoaHocList.find(k => k.id === selectedLop?.khoa_hoc_id);
+    const defaultSotien = selectedKhoa ? selectedKhoa.hoc_phi : 0;
+
+    const newHocPhi = {
+      id: (Date.now() + 1).toString(),
+      ghi_danh_id: newGhiDanhId,
+      so_tien: defaultSotien,
+      ngay_dong: null,
+      trang_thai: 'ChuaThanhToan',
+      phuong_thuc: 'ChuyenKhoan',
+      ghi_chu: 'Tự động khởi tạo theo lượt ghi danh'
+    };
+
+    setHocPhiList([newHocPhi, ...hocPhiList]);
+    showToast('Tạo bản ghi ghi danh và phiếu học phí mới thành công!');
+    setIsModalOpen(false);
+  };
+
+  const handleDelete = (id) => {
+    if (userRole !== 'quan_tri_vien' && userRole !== 'dao_tao') {
+      showToast('Bạn không có quyền xóa ghi danh!', 'error');
+      return;
+    }
+    if (window.confirm('Bạn có chắc chắn muốn hủy bản ghi ghi danh này?')) {
+      setGhiDanhList(ghiDanhList.filter(g => g.id !== id));
+      showToast('Đã xóa lượt ghi danh!');
+    }
+  };
+
+  const canEdit = userRole === 'quan_tri_vien' || userRole === 'dao_tao';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <h3 className="font-semibold text-slate-700 text-sm">Danh sách Ghi danh ({ghiDanhList.length})</h3>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => exportToCSV('GhiDanh', ghiDanhList)}
+            className="px-3.5 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-medium flex items-center gap-2 transition"
+          >
+            <Download className="w-4 h-4" />
+            <span>Xuất CSV</span>
+          </button>
+          {canEdit && (
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition shadow-md shadow-indigo-600/20"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Ghi Danh Học Viên Mới</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase font-semibold">
+                <th className="py-3.5 px-4">Tên Học Viên</th>
+                <th className="py-3.5 px-4">Lớp Đăng Ký</th>
+                <th className="py-3.5 px-4">Ngày Ghi Danh</th>
+                <th className="py-3.5 px-4">Trạng Thái</th>
+                {canEdit && <th className="py-3.5 px-4 text-right">Thao Tác</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+              {ghiDanhList.map(item => {
+                const hv = hocVienList.find(h => h.id === item.hoc_vien_id);
+                const lh = lopHocList.find(l => l.id === item.lop_hoc_id);
+                return (
+                  <tr key={item.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900">{hv?.ho_ten || 'N/A'}</td>
+                    <td className="py-3.5 px-4 text-indigo-600">{lh?.ten_lop || 'N/A'}</td>
+                    <td className="py-3.5 px-4">{item.ngay_ghi_danh}</td>
+                    <td className="py-3.5 px-4">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                        {item.trang_thai}
+                      </span>
+                    </td>
+                    {canEdit && (
+                      <td className="py-3.5 px-4 text-right">
+                        <button onClick={() => handleDelete(item.id)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-600">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <GhiDanhModal 
+          hocVienList={hocVienList} 
+          lopHocList={lopHocList} 
+          onClose={() => setIsModalOpen(false)} 
+          onSave={handleCreateGhiDanh} 
+        />
+      )}
+    </div>
+  );
+}
+
+function GhiDanhModal({ hocVienList, lopHocList, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    hoc_vien_id: hocVienList[0]?.id || '',
+    lop_hoc_id: lopHocList[0]?.id || '',
+    trang_thai: 'DaXacNhan',
+    ghi_chu: ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+        <div className="flex justify-between items-center border-b pb-3">
+          <h3 className="font-bold text-lg text-slate-800">Ghi Danh Học Viên Vô Lớp</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Chọn Học Viên</label>
+            <select value={formData.hoc_vien_id} onChange={e => setFormData({...formData, hoc_vien_id: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm">
+              {hocVienList.map(h => (
+                <option key={h.id} value={h.id}>{h.ma_hoc_vien} - {h.ho_ten}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Chọn Lớp Học</label>
+            <select value={formData.lop_hoc_id} onChange={e => setFormData({...formData, lop_hoc_id: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm">
+              {lopHocList.map(l => (
+                <option key={l.id} value={l.id}>{l.ma_lop} - {l.ten_lop}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Ghi chú</label>
+            <textarea value={formData.ghi_chu} onChange={e => setFormData({...formData, ghi_chu: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" rows={2} />
+          </div>
+          <div className="flex justify-end gap-2 pt-3">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-xl text-sm font-medium text-slate-600">Hủy</button>
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium">Xác Nhận Ghi Danh</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- 7. QUẢN LÝ HỌC PHÍ (HOC PHI VIEW) ---
+function HocPhiView({ hocPhiList, setHocPhiList, ghiDanhList, hocVienList, lopHocList, userRole, showToast, exportToCSV }) {
+  const [filterStatus, setFilterStatus] = useState('ALL');
+
+  const filteredHocPhi = useMemo(() => {
+    if (filterStatus === 'ALL') return hocPhiList;
+    return hocPhiList.filter(hp => hp.trang_thai === filterStatus);
+  }, [hocPhiList, filterStatus]);
+
+  const handlePaymentToggle = (id) => {
+    if (userRole === 'giao_vien') {
+      showToast('Giáo viên không có quyền thao tác học phí!', 'error');
+      return;
+    }
+    setHocPhiList(hocPhiList.map(hp => {
+      if (hp.id === id) {
+        const isPaid = hp.trang_thai === 'DaThanhToan';
+        return {
+          ...hp,
+          trang_thai: isPaid ? 'ChuaThanhToan' : 'DaThanhToan',
+          ngay_dong: isPaid ? null : new Date().toISOString().split('T')[0]
+        };
+      }
+      return hp;
+    }));
+    showToast('Cập nhật trạng thái thanh toán thành công!');
+  };
+
+  const canAction = userRole === 'quan_tri_vien' || userRole === 'ke_toan' || userRole === 'dao_tao';
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <select 
+          value={filterStatus} 
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 outline-none"
+        >
+          <option value="ALL">Tất cả trạng thái học phí</option>
+          <option value="DaThanhToan">Đã Thanh Toán</option>
+          <option value="ChuaThanhToan">Chưa Thanh Toán</option>
+        </select>
+        <button 
+          onClick={() => exportToCSV('HocPhi', filteredHocPhi)}
+          className="px-3.5 py-2 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-medium flex items-center gap-2 transition"
+        >
+          <Download className="w-4 h-4" />
+          <span>Xuất File CSV</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase font-semibold">
+                <th className="py-3.5 px-4">Học Viên</th>
+                <th className="py-3.5 px-4">Lớp Học</th>
+                <th className="py-3.5 px-4">Số Tiền Phải Thu</th>
+                <th className="py-3.5 px-4">Ngày Đóng</th>
+                <th className="py-3.5 px-4">Trạng Thái</th>
+                {canAction && <th className="py-3.5 px-4 text-right">Thao Tác</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+              {filteredHocPhi.map(hp => {
+                const gd = ghiDanhList.find(g => g.id === hp.ghi_danh_id);
+                const hv = hocVienList.find(h => h.id === gd?.hoc_vien_id);
+                const lh = lopHocList.find(l => l.id === gd?.lop_hoc_id);
+
+                return (
+                  <tr key={hp.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-semibold text-slate-900">{hv?.ho_ten || 'Học viên'}</td>
+                    <td className="py-3.5 px-4 text-slate-600">{lh?.ten_lop || 'Lớp học'}</td>
+                    <td className="py-3.5 px-4 font-bold text-slate-800">{formatVND(hp.so_tien)}</td>
+                    <td className="py-3.5 px-4 text-slate-500">{hp.ngay_dong || 'Chưa đóng'}</td>
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                        hp.trang_thai === 'DaThanhToan' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                        {hp.trang_thai === 'DaThanhToan' ? 'Đã Thanh Toán' : 'Chưa Thanh Toán'}
+                      </span>
+                    </td>
+                    {canAction && (
+                      <td className="py-3.5 px-4 text-right">
+                        <button 
+                          onClick={() => handlePaymentToggle(hp.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition ${
+                            hp.trang_thai === 'DaThanhToan' 
+                              ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-300' 
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-transparent'
+                          }`}
+                        >
+                          {hp.trang_thai === 'DaThanhToan' ? 'Đánh dấu Nợ' : 'Xác nhận Đã Thu'}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 8. THỐNG KÊ & BÁO CÁO (BAO CAO VIEW) ---
+function BaoCaoView({ hocVienList, khoaHocList, lopHocList, ghiDanhList, hocPhiList, exportToCSV }) {
+  const reportData = useMemo(() => {
+    const totalCollected = hocPhiList.filter(h => h.trang_thai === 'DaThanhToan').reduce((sum, item) => sum + Number(item.so_tien), 0);
+    const totalPending = hocPhiList.filter(h => h.trang_thai === 'ChuaThanhToan').reduce((sum, item) => sum + Number(item.so_tien), 0);
+    const totalPossible = totalCollected + totalPending;
+    const rate = totalPossible > 0 ? Math.round((totalCollected / totalPossible) * 100) : 0;
+
+    return {
+      totalCollected,
+      totalPending,
+      totalPossible,
+      rate
+    };
+  }, [hocPhiList]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div>
+          <h2 className="text-lg font-bold text-slate-800">Thống Kê & Báo Cáo Tài Chính</h2>
+          <p className="text-slate-500 text-sm">Cập nhật theo dữ liệu thực tế trung tâm</p>
+        </div>
+        <button 
+          onClick={() => exportToCSV('BaoCaoTaichinh', [reportData])}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition"
+        >
+          <Download className="w-4 h-4" />
+          <span>Xuất Báo Cáo Tài Chính</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+          <span className="text-xs font-semibold text-slate-500 uppercase">Tỷ Lệ Thu Học Phí</span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold text-indigo-600">{reportData.rate}%</span>
+            <span className="text-xs text-slate-500">hoàn thành</span>
+          </div>
+          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mt-3">
+            <div className="bg-indigo-600 h-full rounded-full transition-all duration-500" style={{ width: `${reportData.rate}%` }}></div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+          <span className="text-xs font-semibold text-slate-500 uppercase">Doanh Thu Dự Kiến</span>
+          <p className="text-2xl font-bold text-slate-800">{formatVND(reportData.totalPossible)}</p>
+          <p className="text-xs text-slate-500">Bao gồm toàn bộ hợp đồng ghi danh</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm space-y-1">
+          <span className="text-xs font-semibold text-slate-500 uppercase">Học Phí Tồn Đọng</span>
+          <p className="text-2xl font-bold text-amber-600">{formatVND(reportData.totalPending)}</p>
+          <p className="text-xs text-slate-500">Cần nhắc lịch đóng tiền học viên</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 9. ĐIỂM DANH (DIEM DANH VIEW) ---
+function DiemDanhView({ diemDanhList, setDiemDanhList, lopHocList, hocVienList, ghiDanhList, currentUser, showToast }) {
+  const [selectedLopId, setSelectedLopId] = useState(lopHocList[0]?.id || '');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Nếu là giáo viên, chỉ cho phép chọn các lớp mà giáo viên đó phụ trách (hoặc tất cả nếu là admin)
+  const availableLops = useMemo(() => {
+    if (currentUser.vai_tro === 'giao_vien') {
+      return lopHocList.filter(l => l.giao_vien.toLowerCase().includes(currentUser.ho_ten.toLowerCase()) || l.giao_vien.includes('Nguyễn Đức Anh'));
+    }
+    return lopHocList;
+  }, [lopHocList, currentUser]);
+
+  const currentLopStudents = useMemo(() => {
+    const ghiDanhs = ghiDanhList.filter(g => g.lop_hoc_id === selectedLopId);
+    return ghiDanhs.map(gd => {
+      const hv = hocVienList.find(h => h.id === gd.hoc_vien_id);
+      const existingRecord = diemDanhList.find(d => d.lop_hoc_id === selectedLopId && d.hoc_vien_id === gd.hoc_vien_id && d.ngay === selectedDate);
+      return {
+        ...hv,
+        trang_thai: existingRecord ? existingRecord.trang_thai : 'CoMat',
+        ghi_chu: existingRecord ? existingRecord.ghi_chu : ''
+      };
+    }).filter(item => item.id);
+  }, [selectedLopId, selectedDate, ghiDanhList, hocVienList, diemDanhList]);
+
+  const handleStatusChange = (hocVienId, status) => {
+    const updated = diemDanhList.map(item => {
+      if (item.lop_hoc_id === selectedLopId && item.hoc_vien_id === hocVienId && item.ngay === selectedDate) {
+        return { ...item, trang_thai: status };
+      }
+      return item;
+    });
+
+    const exists = updated.some(item => item.lop_hoc_id === selectedLopId && item.hoc_vien_id === hocVienId && item.ngay === selectedDate);
+    if (!exists) {
+      updated.push({
+        id: Date.now().toString() + Math.random(),
+        lop_hoc_id: selectedLopId,
+        hoc_vien_id: hocVienId,
+        ngay: selectedDate,
+        trang_thai: status,
+        ghi_chu: ''
+      });
+    }
+
+    setDiemDanhList(updated);
+    showToast('Đã ghi nhận điểm danh học viên!');
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Chọn Lớp Học</label>
+            <select 
+              value={selectedLopId} 
+              onChange={e => setSelectedLopId(e.target.value)}
+              className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none"
+            >
+              {availableLops.map(l => (
+                <option key={l.id} value={l.id}>{l.ma_lop} - {l.ten_lop} (GV: {l.giao_vien})</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1">Ngày Điểm Danh</label>
+            <input 
+              type="date" 
+              value={selectedDate} 
+              onChange={e => setSelectedDate(e.target.value)}
+              className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <CheckSquare className="w-5 h-5 text-indigo-600" />
+            <span>Danh sách điểm danh lớp ngày {selectedDate}</span>
+          </h3>
+          <span className="text-xs text-slate-500">Tổng số: {currentLopStudents.length} học viên</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 text-slate-600 text-xs uppercase font-semibold">
+                <th className="py-3.5 px-4">Mã HV</th>
+                <th className="py-3.5 px-4">Họ và Tên</th>
+                <th className="py-3.5 px-4">Điện Thoại</th>
+                <th className="py-3.5 px-4 text-center">Trạng Thái Điểm Danh</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+              {currentLopStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-slate-400">Không có học viên nào ghi danh trong lớp này.</td>
+                </tr>
+              ) : (
+                currentLopStudents.map(hv => (
+                  <tr key={hv.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3.5 px-4 font-mono font-semibold text-indigo-600">{hv.ma_hoc_vien}</td>
+                    <td className="py-3.5 px-4 font-medium text-slate-900">{hv.ho_ten}</td>
+                    <td className="py-3.5 px-4">{hv.dien_thoai}</td>
+                    <td className="py-3.5 px-4 text-center space-x-2">
+                      <button 
+                        onClick={() => handleStatusChange(hv.id, 'CoMat')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                          hv.trang_thai === 'CoMat' ? 'bg-emerald-600 text-white border-transparent' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        Có mặt
+                      </button>
+                      <button 
+                        onClick={() => handleStatusChange(hv.id, 'VangPhep')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                          hv.trang_thai === 'VangPhep' ? 'bg-amber-500 text-white border-transparent' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        Vắng phép
+                      </button>
+                      <button 
+                        onClick={() => handleStatusChange(hv.id, 'VangKhongPhep')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                          hv.trang_thai === 'VangKhongPhep' ? 'bg-red-600 text-white border-transparent' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}
+                      >
+                        Vắng không phép
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 10. QUẢN LÝ TÀI KHOẢN (QUAN LY TAI KHOAN VIEW) ---
+function QuanLyTaiKhoanView({ userAccounts, setUserAccounts, showToast }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newAcc, setNewAcc] = useState({ email: '', password: '', ho_ten: '', vai_tro: 'dao_tao' });
+
+  const handleAddAccount = (e) => {
+    e.preventDefault();
+    if (userAccounts.some(u => u.email === newAcc.email)) {
+      showToast('Email tài khoản đã tồn tại!', 'error');
+      return;
+    }
+    setUserAccounts([...userAccounts, newAcc]);
+    showToast('Tạo tài khoản và phân quyền thành công!');
+    setIsModalOpen(false);
+    setNewAcc({ email: '', password: '', ho_ten: '', vai_tro: 'dao_tao' });
+  };
+
+  const handleDelete = (email) => {
+    if (email === 'admin@quanlytt.edu.vn') {
+      showToast('Không thể xóa tài khoản Quản trị tối cao!', 'error');
+      return;
+    }
+    if (window.confirm('Xác nhận xóa tài khoản này?')) {
+      setUserAccounts(userAccounts.filter(u => u.email !== email));
+      showToast('Đã xóa tài khoản!');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm">
+        <h3 className="font-semibold text-slate-700 text-sm">Danh sách tài khoản hệ thống ({userAccounts.length})</h3>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-xl text-sm flex items-center gap-2 transition shadow-md shadow-indigo-600/20"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Thêm Tài Khoản Mới</span>
+        </button>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs uppercase font-semibold">
+                <th className="py-3.5 px-4">Họ và Tên</th>
+                <th className="py-3.5 px-4">Email</th>
+                <th className="py-3.5 px-4">Vai Trò Hệ Thống</th>
+                <th className="py-3.5 px-4 text-right">Thao Tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-sm text-slate-700">
+              {userAccounts.map(acc => (
+                <tr key={acc.email} className="hover:bg-slate-50/80 transition">
+                  <td className="py-3.5 px-4 font-semibold text-slate-900">{acc.ho_ten}</td>
+                  <td className="py-3.5 px-4 text-slate-600">{acc.email}</td>
+                  <td className="py-3.5 px-4">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 uppercase">
+                      {acc.vai_tro}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 text-right">
+                    <button onClick={() => handleDelete(acc.email)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-600">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="font-bold text-lg text-slate-800">Thêm Tài Khoản & Phân Quyền</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleAddAccount} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Họ và tên</label>
+                <input required type="text" value={newAcc.ho_ten} onChange={e => setNewAcc({...newAcc, ho_ten: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" placeholder="Nguyễn Văn B" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Email đăng nhập</label>
+                <input required type="email" value={newAcc.email} onChange={e => setNewAcc({...newAcc, email: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" placeholder="user@quanlytt.edu.vn" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Mật khẩu</label>
+                <input required type="password" value={newAcc.password} onChange={e => setNewAcc({...newAcc, password: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm" placeholder="••••••••" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Vai trò</label>
+                <select value={newAcc.vai_tro} onChange={e => setNewAcc({...newAcc, vai_tro: e.target.value})} className="w-full border rounded-xl px-3 py-2 text-sm">
+                  <option value="dao_tao">Đào Tạo</option>
+                  <option value="ke_toan">Kế Toán</option>
+                  <option value="giao_vien">Giáo Viên</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border rounded-xl text-sm font-medium text-slate-600">Hủy</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium">Tạo Tài Khoản</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
